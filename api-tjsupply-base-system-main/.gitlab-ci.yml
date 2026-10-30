@@ -1,0 +1,69 @@
+stages:
+  - build
+  - deployment
+  - cleanup
+
+build-job:
+  stage: build
+  tags:
+    - build
+  environment: develop
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: always
+    - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+      when: never
+  script:
+    # build image
+    - echo "Start building process..."
+    - docker build -t registry.gitlab.com/tjsupply-inside/api-tjsupply-base-system .
+    # push image
+    - echo "Start pushing image..."
+    - docker push registry.gitlab.com/tjsupply-inside/api-tjsupply-base-system
+    # deploy on local server
+    - echo "Starting server ..."
+    - docker-compose up -d
+
+deployment-job:
+  stage: deployment
+  tags:
+    - deployment
+  environment: deployment
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+    - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+      when: never
+  script:
+    # pull image
+    - echo "Start pulling images"
+    - docker image pull registry.gitlab.com/tjsupply-inside/api-tjsupply-base-system
+    # start server
+    - echo "Starting server..."
+    - docker-compose up -d
+
+cleanup-build-server:
+  stage: cleanup
+  tags:
+    - build
+  when: manual
+  script:
+    # prune unused data
+    - echo "Removing unused data ..."
+    - docker image prune -f
+    - docker container prune -f
+    - docker volume prune -f
+    - echo "Done."
+
+cleanup-production-server:
+  stage: cleanup
+  tags:
+    - deployment
+  when: manual
+  script:
+    # prune unused data
+    - echo "Removing unused data ..."
+    - docker image prune -f
+    - docker container prune -f
+    - docker volume prune -f
+    - echo "Done."

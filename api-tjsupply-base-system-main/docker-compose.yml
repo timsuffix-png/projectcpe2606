@@ -1,0 +1,34 @@
+services:
+  api:
+    image: registry.gitlab.com/tjsupply-inside/api-tjsupply-base-system
+    container_name: api
+    restart: always
+    environment:
+      HOSTDB: db
+      PORTDB: ${PORT_DB}
+      USERDB: ${USER_DB}
+      PASSWORDDB: ${PASSWORD_DB}
+      SECRET_KEY: ${SECRET_KEY}
+    ports:
+      - "3021:3021"
+    depends_on:
+      - db
+    volumes:
+      - api-upload-data:/usr/src/app/upload:rw
+  db:
+    image: postgres
+    container_name: db
+    restart: always
+    environment:
+      POSTGRES_DB: tjsupply-base-system
+      POSTGRES_PASSWORD: ${PASSWORD_DB}
+    ports:
+      - "5432"
+    volumes:
+      - tjsupply-data:/var/lib/postgresql/data:rw
+
+volumes:
+  api-upload-data:
+    driver: local
+  tjsupply-data:
+    driver: local

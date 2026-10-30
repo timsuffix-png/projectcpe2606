@@ -1,0 +1,8 @@
+dist/
+documentation/
+node_modules/
+upload/
+.git/
+
+*.md
+.env
